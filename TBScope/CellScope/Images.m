@@ -36,6 +36,24 @@
 - (PMKPromise *)uploadToGoogleDrive:(GoogleDriveService *)googleDriveService
 {
     __weak typeof(self) weakSelf = self;
+
+    // This leaks memory:
+    return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+        __strong typeof(self) strongSelf = weakSelf;
+        if (strongSelf) {
+            [[strongSelf managedObjectContext] performBlock:^{
+                NSLog(@"Hello, world");
+                resolve(nil);
+            }];
+        }
+    }];
+
+//    // This doesn't leak memory:
+//    return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+//        NSLog(@"Hello, world");
+//        resolve(nil);
+//    }];
+
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
         __strong typeof(self) strongSelf = weakSelf;
         if (strongSelf) {
