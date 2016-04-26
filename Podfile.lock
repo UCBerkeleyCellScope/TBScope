@@ -12,16 +12,16 @@ PODS:
   - gtm-oauth2 (1.0.126):
     - gtm-http-fetcher (~> 1.0.141)
   - OCMock (3.2)
-  - PromiseKit/Hang (1.6.0):
+  - PromiseKit/Hang (1.7.0):
     - PromiseKit/Promise
-  - PromiseKit/Join (1.6.0):
+  - PromiseKit/Join (1.7.0):
     - PromiseKit/Promise
     - PromiseKit/Until
-  - PromiseKit/Promise (1.6.0)
-  - PromiseKit/Until (1.6.0):
+  - PromiseKit/Promise (1.7.0)
+  - PromiseKit/Until (1.7.0):
     - PromiseKit/Promise
     - PromiseKit/When
-  - PromiseKit/When (1.6.0):
+  - PromiseKit/When (1.7.0):
     - PromiseKit/Promise
 
 DEPENDENCIES:
@@ -29,9 +29,9 @@ DEPENDENCIES:
   - DynamicSpriteSheet (from `https://github.com/ardell/DynamicSpriteSheet.git`)
   - Google-API-Client/Drive (~> 1.0)
   - OCMock
-  - PromiseKit/Hang (~> 1.6)
-  - PromiseKit/Join (~> 1.6)
-  - PromiseKit/Promise (~> 1.6)
+  - PromiseKit/Hang (~> 1.7)
+  - PromiseKit/Join (~> 1.7)
+  - PromiseKit/Promise (~> 1.7)
 
 EXTERNAL SOURCES:
   BackgroundTask:
@@ -54,6 +54,6 @@ SPEC CHECKSUMS:
   gtm-http-fetcher: 6d4617e7d343b6e4c082b777541c334eb6f5d81e
   gtm-oauth2: 2a18b824e4f8a02df6cfe987beb59ae9d9697f9d
   OCMock: 28def049ef47f996b515a8eeea958be7ccab2dbb
-  PromiseKit: 6be651503d4af22830b5313be993c5a0ef77bf77
+  PromiseKit: dcbaebb85aa88f2c9bad196335cdb201a9342b88
 
 COCOAPODS: 0.39.0
