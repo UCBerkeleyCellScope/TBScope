@@ -193,30 +193,33 @@ BOOL _hasAttemptedLogUpload;
                                     }
                                 }];
                             }).catch(^(NSError *error) {
-                                if (error.code==404) {  // the file referenced by this exam isn't present on server, so remove this google drive ID
-                                    [TBScopeData CSLog:@"Requested JSON file doesn't exist in Google Drive (error 404), so removing this reference."
-                                            inCategory:@"SYNC"];
+                                return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+                                    if (error.code==404) {  // the file referenced by this exam isn't present on server, so remove this google drive ID
+                                        [TBScopeData CSLog:@"Requested JSON file doesn't exist in Google Drive (error 404), so removing this reference."
+                                                inCategory:@"SYNC"];
 
-                                    [tmpMOC performBlock:^{
-                                        // remove all google drive references
-                                        ex.googleDriveFileID = nil;
-                                        for (Slides* sl in ex.examSlides) {
-                                            sl.roiSpriteGoogleDriveFileID = nil;
-                                            for (Images* im in sl.slideImages)
-                                                im.googleDriveFileID = nil;
-                                        }
+                                        [tmpMOC performBlock:^{
+                                            // remove all google drive references
+                                            ex.googleDriveFileID = nil;
+                                            for (Slides* sl in ex.examSlides) {
+                                                sl.roiSpriteGoogleDriveFileID = nil;
+                                                for (Images* im in sl.slideImages)
+                                                    im.googleDriveFileID = nil;
+                                            }
 
-                                        // Save exam/images
-                                        NSError *tmpMOCSaveError;
-                                        if (![tmpMOC save:&tmpMOCSaveError]) {
-                                            NSLog(@"Error saving temporary managed object context.");
-                                        }
-                                        [[TBScopeData sharedData] saveCoreData];
-                                    }];
-                                } else {
-                                    NSString *message = [NSString stringWithFormat:@"An error occured while querying Google Drive: %@", error.description];
-                                    [TBScopeData CSLog:message inCategory:@"SYNC"];
-                                }
+                                            // Save exam/images
+                                            NSError *tmpMOCSaveError;
+                                            if (![tmpMOC save:&tmpMOCSaveError]) {
+                                                NSLog(@"Error saving temporary managed object context.");
+                                            }
+                                            [[TBScopeData sharedData] saveCoreData];
+                                        }];
+                                    } else {
+                                        NSString *message = [NSString stringWithFormat:@"An error occured while querying Google Drive: %@", error.description];
+                                        [TBScopeData CSLog:message inCategory:@"SYNC"];
+                                    }
+                                    resolve(nil);
+                                }];
                             });
                         [enqueueingPromises addObject:promise];
                     }
@@ -282,8 +285,11 @@ BOOL _hasAttemptedLogUpload;
                         }];
                     }];
                 }).catch(^(NSError *error) {
-                    NSString *message = [NSString stringWithFormat:@"An error occured while querying Google Drive: %@", error.description];
-                    [TBScopeData CSLog:message inCategory:@"SYNC"];
+                    return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+                        NSString *message = [NSString stringWithFormat:@"An error occured while querying Google Drive: %@", error.description];
+                        [TBScopeData CSLog:message inCategory:@"SYNC"];
+                        resolve(nil);
+                    }];
                 });
             [enqueueingPromises addObject:promise];
         }
