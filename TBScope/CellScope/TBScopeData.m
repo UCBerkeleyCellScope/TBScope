@@ -146,16 +146,20 @@ NSPersistentStoreCoordinator* _persistentStoreCoordinator;
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
         [_managedObjectContext performBlock:^{
             if (_managedObjectContext.hasChanges) {
-                [_managedObjectContext performBlock:^{
-                    NSError *error;
-                    if ([_managedObjectContext save:&error]) {
-                        [TBScopeData CSLog:@"Committed changes to core data" inCategory:@"DATA"];
-                    } else {
-                        NSString *logMessage = [NSString stringWithFormat:@"Failed to commit to core data: %@", error.description];
-                        [TBScopeData CSLog:logMessage inCategory:@"DATA"];
+                NSError *error;
+                if ([_managedObjectContext save:&error]) {
+                    [TBScopeData CSLog:@"Committed changes to core data" inCategory:@"DATA"];
+
+                    // Clean up memory usage
+                    for (NSManagedObject *obj in [_managedObjectContext registeredObjects]) {
+                        [_managedObjectContext refreshObject:obj mergeChanges:NO];
                     }
-                }];
+                } else {
+                    NSString *logMessage = [NSString stringWithFormat:@"Failed to commit to core data: %@", error.description];
+                    [TBScopeData CSLog:logMessage inCategory:@"DATA"];
+                }
             }
+            resolve(nil);
         }];
     }];
 }

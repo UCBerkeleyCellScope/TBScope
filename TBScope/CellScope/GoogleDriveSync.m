@@ -505,7 +505,17 @@ BOOL _hasAttemptedLogUpload;
                 }];
             }];
         }).then(^{
-            [[TBScopeData sharedData] saveCoreData];
+            return [[TBScopeData sharedData] saveCoreData];
+        }).then(^{
+            return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+                [moc performBlock:^{
+                    for (NSManagedObject *obj in [moc registeredObjects]) {
+                        [moc refreshObject:obj mergeChanges:NO];
+                    }
+                    resolve(nil);
+                }];
+            }];
+        }).then(^{
             completionBlock(nil);
         }).catch(^(NSError *error) {
             completionBlock(error);
