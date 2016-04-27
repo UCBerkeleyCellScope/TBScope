@@ -132,7 +132,11 @@ BOOL _hasAttemptedLogUpload;
     NSManagedObjectContext *tmpMOC = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
     tmpMOC.parentContext = [[TBScopeData sharedData] managedObjectContext];
     [tmpMOC performBlock:^{
+        // Start a list of promises to wait for. Add a no-op promise in case
+        // we don't have anything else to do.
         NSMutableArray *enqueueingPromises = [[NSMutableArray alloc] init];
+        [enqueueingPromises addObject:[PMKPromise noopPromise]];
+
         NSPredicate* pred;
         NSMutableArray* results;
 
@@ -142,19 +146,17 @@ BOOL _hasAttemptedLogUpload;
             [TBScopeData CSLog:@"Fetching new images from core data." inCategory:@"SYNC"];
 
             // Find all slides, with the most recent first
-            results = [CoreDataHelper searchObjectsForEntity:@"Slides"
+            results = [CoreDataHelper searchObjectsForEntity:@"Images"
                                                withPredicate:nil
-                                                  andSortKey:@"dateScanned"
+                                                  andSortKey:@"slide.dateScanned"
                                             andSortAscending:NO
-                                                  andContext:tmpMOC];
+                                                  andContext:tmpMOC
+                                               andResultType:NSManagedObjectIDResultType];
             int imageUploadsEnqueued = 0;
-            for (Slides *slide in results) {
-                NSArray *imagesToUpload = [slide imagesToUpload];
-                for (Images *image in imagesToUpload) {
-                    if ([self.imageUploadQueue indexOfObject:image] == NSNotFound) {  // if it's not already in the queue
-                        [self.imageUploadQueue addObject:image];
-                        imageUploadsEnqueued++;
-                    }
+            for (NSManagedObjectID *objectID in results) {
+                if ([self.imageUploadQueue indexOfObject:objectID] == NSNotFound) {  // if it's not already in the queue
+                    [self.imageUploadQueue addObject:objectID];
+                    imageUploadsEnqueued++;
                 }
             }
             [TBScopeData CSLog:[NSString stringWithFormat:@"Added %d images to upload queue.", imageUploadsEnqueued] inCategory:@"SYNC"];
@@ -166,7 +168,11 @@ BOOL _hasAttemptedLogUpload;
             [TBScopeData CSLog:@"Fetching new/modified exams from core data." inCategory:@"SYNC"];
             //TODO: it probably makes more sense to just store a "hasUpdates" flag in CD. this gets set whenever exam changes, reset when its uploaded. then can do away w/ previousSyncHadNoChanges
             pred = [NSPredicate predicateWithFormat:@"(synced == NO) || (googleDriveFileID = nil)"];
-            results = [CoreDataHelper searchObjectsForEntity:@"Exams" withPredicate:pred andSortKey:@"dateModified" andSortAscending:YES andContext:tmpMOC];
+            results = [CoreDataHelper searchObjectsForEntity:@"Exams"
+                                               withPredicate:pred
+                                                  andSortKey:@"dateModified"
+                                            andSortAscending:YES
+                                                  andContext:tmpMOC];
             int examUploadsEnqueued = 0;
             for (Exams* ex in results) {
                 if ([self.examUploadQueue indexOfObject:ex]==NSNotFound) {  //if it's not already in the queue
@@ -369,9 +375,9 @@ BOOL _hasAttemptedLogUpload;
     
     [TBScopeData CSLog:@"Processing next item in sync queue..." inCategory:@"SYNC"];
     if (self.imageUploadQueue.count>0 && self.syncEnabled && [self uploadIsEnabled]) {
-        Images *image = self.imageUploadQueue[0];
+        NSManagedObjectID *objectID = self.imageUploadQueue[0];
         [self.imageUploadQueue removeObjectAtIndex:0];
-        [self uploadImage:image completionHandler:completionBlock];
+        [self uploadImageWithObjectID:objectID completionHandler:completionBlock];
     } else if (self.examUploadQueue.count>0 && self.syncEnabled && [self uploadIsEnabled]) {
         Exams *exam = self.examUploadQueue[0];
         [self.examUploadQueue removeObjectAtIndex:0];
@@ -403,7 +409,8 @@ BOOL _hasAttemptedLogUpload;
     }
 }
 
-- (void)uploadImage:(Images*)image completionHandler:(void(^)(NSError*))completionBlock
+- (void)uploadImageWithObjectID:(NSManagedObjectID *)objectID
+              completionHandler:(void(^)(NSError*))completionBlock
 {
     // Don't upload if "UploadEnabled" config option is turned off
     if (![self uploadIsEnabled]) {
@@ -419,7 +426,7 @@ BOOL _hasAttemptedLogUpload;
     // Load a local copy of the image for this thread
     __block Images *localImage;
     [moc performBlockAndWait:^{
-        localImage = [moc objectWithID:[image objectID]];
+        localImage = [moc objectWithID:objectID];
     }];
 
     // Upload the image

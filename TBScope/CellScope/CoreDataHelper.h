@@ -12,8 +12,19 @@
                                andContext:(NSManagedObjectContext *)managedObjectContext;
 +(NSMutableArray *)searchObjectsForEntity:(NSString*)entityName
                             withPredicate:(NSPredicate *)predicate
+                               andSortKey:(NSString*)sortKey
+                         andSortAscending:(BOOL)sortAscending
+                               andContext:(NSManagedObjectContext *)managedObjectContext
+                            andResultType:(NSFetchRequestResultType)resultType;
++(NSMutableArray *)searchObjectsForEntity:(NSString*)entityName
+                            withPredicate:(NSPredicate *)predicate
                        andSortDescriptors:(NSArray*)sortDescriptors
                                andContext:(NSManagedObjectContext*)managedObjectContext;
++(NSMutableArray *)searchObjectsForEntity:(NSString*)entityName
+                            withPredicate:(NSPredicate *)predicate
+                       andSortDescriptors:(NSArray*)sortDescriptors
+                               andContext:(NSManagedObjectContext*)managedObjectContext
+                            andResultType:(NSFetchRequestResultType)resultType;
 
 
 // For deletion of objects

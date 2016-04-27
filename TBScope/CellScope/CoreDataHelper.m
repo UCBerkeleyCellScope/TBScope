@@ -9,11 +9,27 @@
                        andSortDescriptors:(NSArray*)sortDescriptors
                                andContext:(NSManagedObjectContext*)managedObjectContext
 {
+    return [CoreDataHelper searchObjectsForEntity:entityName
+                                    withPredicate:predicate
+                               andSortDescriptors:sortDescriptors
+                                       andContext:managedObjectContext
+                                    andResultType:NSManagedObjectResultType];
+}
+
++(NSMutableArray *)searchObjectsForEntity:(NSString*)entityName
+                            withPredicate:(NSPredicate *)predicate
+                       andSortDescriptors:(NSArray*)sortDescriptors
+                               andContext:(NSManagedObjectContext*)managedObjectContext
+                            andResultType:(NSFetchRequestResultType)resultType
+{
     // Create fetch request
     NSFetchRequest *request = [[NSFetchRequest alloc] init];
     NSEntityDescription *entity = [NSEntityDescription entityForName:entityName inManagedObjectContext:managedObjectContext];
     [request setEntity:entity];
-    
+
+    // If a result type was specified then use it in the request
+    request.resultType = resultType;
+
     // If a predicate was specified then use it in the request
     if (predicate != nil)
         [request setPredicate:predicate];
@@ -41,6 +57,22 @@
                          andSortAscending:(BOOL)sortAscending
                                andContext:(NSManagedObjectContext *)managedObjectContext
 {
+    return [CoreDataHelper searchObjectsForEntity:entityName
+                                    withPredicate:predicate
+                                       andSortKey:sortKey
+                                 andSortAscending:sortAscending
+                                       andContext:managedObjectContext
+                                    andResultType:NSManagedObjectResultType];
+}
+
+// Fetch objects with a predicate and a result type
++(NSMutableArray *)searchObjectsForEntity:(NSString*)entityName
+                            withPredicate:(NSPredicate *)predicate
+                               andSortKey:(NSString*)sortKey
+                         andSortAscending:(BOOL)sortAscending
+                               andContext:(NSManagedObjectContext *)managedObjectContext
+                            andResultType:(NSFetchRequestResultType)resultType
+{
     NSArray *sortDescriptors = nil;
     if (sortKey != nil) {
         NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:sortKey ascending:sortAscending];
@@ -50,7 +82,8 @@
     return [CoreDataHelper searchObjectsForEntity:entityName
                                     withPredicate:predicate
                                andSortDescriptors:sortDescriptors
-                                       andContext:managedObjectContext];
+                                       andContext:managedObjectContext
+                                    andResultType:resultType];
 }
 
 // Fetch objects without a predicate
