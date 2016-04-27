@@ -61,9 +61,11 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
 
 - (PMKPromise *)fileExists:(GTLDriveFile *)file
 {
+    __weak typeof(self) weakSelf = self;
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
         NSString *fileId = [file identifier];
-        [self getMetadataForFileId:fileId]
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        [strongSelf getMetadataForFileId:fileId]
             .then(^(GTLDriveFile *file) { resolve(file); })
             .catch(^(NSError *error) { resolve(nil); });
     }];
@@ -71,11 +73,13 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
 
 - (PMKPromise *)getFile:(GTLDriveFile *)file
 {
+    __weak typeof(self) weakSelf = self;
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
         GTMHTTPFetcher *fetcher = [GTMHTTPFetcher fetcherWithURLString:file.downloadUrl];
         
         // For downloads requiring authorization, set the authorizer.
-        fetcher.authorizer = self.driveService.authorizer;
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        fetcher.authorizer = strongSelf.driveService.authorizer;
 
         // TODO: check what happens w/o network
         [fetcher beginFetchWithCompletionHandler:^(NSData *data, NSError *error) {
@@ -117,9 +121,12 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
 
 - (PMKPromise *)uploadFile:(GTLDriveFile *)file withData:(NSData *)data
 {
+    __weak typeof(self) weakSelf = self;
+
     // Check whether file exists
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
-        [self fileExists:file]
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        [strongSelf fileExists:file]
             .then(^(GTLDriveFile *file) { resolve(file); })
             .catch(^{ resolve(nil); });
     }].then(^(GTLDriveFile *existingFile) {
@@ -152,26 +159,31 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
         query.setModifiedDate = YES;
 
         // Execute query
-        return [self executeQueryWithTimeout:query];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        return [strongSelf executeQueryWithTimeout:query];
     });
 }
 
 - (PMKPromise *)deleteFileWithId:(NSString *)fileId
 {
+    __weak typeof(self) weakSelf = self;
     return [self getMetadataForFileId:fileId].then(^(GTLDriveFile *existingFile) {
         if (!existingFile) return [PMKPromise noopPromise];
 
         // Delete the file
         GTLQueryDrive* query = [GTLQueryDrive queryForFilesTrashWithFileId:fileId];
-        return [self executeQueryWithTimeout:query];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        return [strongSelf executeQueryWithTimeout:query];
     });
 }
 
 - (PMKPromise *)executeQueryWithTimeout:(GTLQuery *)query
 {
+    __weak typeof(self) weakSelf = self;
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
         dispatch_async(dispatch_get_main_queue(), ^{
-            GTLServiceTicket* ticket = [self.driveService executeQuery:query
+            GTLServiceTicket* ticket = [strongSelf.driveService executeQuery:query
                                                      completionHandler:^(GTLServiceTicket *ticket, id object, NSError *error) {
                                                          if (error) {
                                                              resolve(error);
@@ -185,7 +197,7 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
             //and return an error
             //TODO: roll this into my own executeQuery function and make it universal
             //TODO: check what happens if we are uploading a big file (hopefully returns a diff status code)
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(self.googleDriveTimeout * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(strongSelf.googleDriveTimeout * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 //NSLog(@"google returned status code: %ld",(long)ticket.statusCode);
                 if (ticket.statusCode==0) { //might also handle other error codes? code of 0 means that it didn't even attempt I guess? the other HTTP codes should get handled in the errorhandler above
                     [ticket cancelTicket];

@@ -146,8 +146,9 @@ BOOL _hasAttemptedLogUpload;
             [TBScopeData CSLog:@"Fetching new images from core data." inCategory:@"SYNC"];
 
             // Find all slides, with the most recent first
+            pred = [NSPredicate predicateWithFormat:@"(googleDriveFileID = nil)"];
             results = [CoreDataHelper searchObjectsForEntity:@"Images"
-                                               withPredicate:nil
+                                               withPredicate:pred
                                                   andSortKey:@"slide.dateScanned"
                                             andSortAscending:NO
                                                   andContext:tmpMOC
@@ -331,7 +332,7 @@ BOOL _hasAttemptedLogUpload;
         // Start processing queues. We wait to dispatch this for 5s because we want
         // to make sure the server has a chance to respond to the requests made
         // above (and all the queues become populated)
-        [PMKPromise join:enqueueingPromises]
+        [PMKPromise when:enqueueingPromises]
             .then(^{ [self processTransferQueues]; });
     }];
 }
@@ -443,7 +444,8 @@ BOOL _hasAttemptedLogUpload;
                 }];
             }];
         }).then(^{
-            [[TBScopeData sharedData] saveCoreData];
+            return [[TBScopeData sharedData] saveCoreData];
+        }).then(^{
             completionBlock(nil);
         }).catch(^(NSError *error) {
             completionBlock(error);

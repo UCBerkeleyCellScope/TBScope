@@ -35,18 +35,20 @@
 
 - (PMKPromise *)uploadToGoogleDrive:(GoogleDriveService *)googleDriveService
 {
+    __weak typeof(self) weakSelf = self;
     __block NSManagedObjectContext *moc = [self managedObjectContext];
     return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
         [moc performBlock:^{
+            __strong typeof(weakSelf) strongSelf = weakSelf;
             NSString *message = [NSString stringWithFormat:@"Uploading image #%d from slide #%d from exam %@ with googleDriveFileID %@",
-              self.fieldNumber,
-              self.slide.slideNumber,
-              self.slide.exam.examID,
-              self.googleDriveFileID
+              strongSelf.fieldNumber,
+              strongSelf.slide.slideNumber,
+              strongSelf.slide.exam.examID,
+              strongSelf.googleDriveFileID
             ];
             [TBScopeData CSLog:message inCategory:@"SYNC"];
 
-            resolve(self.googleDriveFileID);
+            resolve(strongSelf.googleDriveFileID);
         }];
     }].then(^(NSString *googleDriveFileID) {
         if (googleDriveFileID) {
@@ -54,17 +56,19 @@
             return [PMKPromise noopPromise];
         }
 
+        __strong typeof(weakSelf) strongSelf = weakSelf;
         return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
             [moc performBlock:^{
-                [TBScopeImageAsset getImageAtPath:[self path]]
+                [TBScopeImageAsset getImageAtPath:[strongSelf path]]
                     .then(^(UIImage *image) { resolve(image); })
                     .catch(^(NSError *error) { resolve(error); });
             }];
         }];
     }).then(^ PMKPromise* (UIImage *image) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
         if (!image) {
             [moc performBlock:^{
-                NSString *message = [NSString stringWithFormat:@"Could not load image from path %@", self.path ];
+                NSString *message = [NSString stringWithFormat:@"Could not load image from path %@", strongSelf.path ];
                 [TBScopeData CSLog:message inCategory:@"SYNC"];
             }];
             return [PMKPromise noopPromise];
@@ -76,13 +80,13 @@
                 // Create a google file object from this image
                 GTLDriveFile *file = [GTLDriveFile object];
                 file.title = [NSString stringWithFormat:@"%@ - %@ - %d-%d.jpg",
-                              self.slide.exam.cellscopeID,
-                              self.slide.exam.examID,
-                              self.slide.slideNumber,
-                              self.fieldNumber];
+                              strongSelf.slide.exam.cellscopeID,
+                              strongSelf.slide.exam.examID,
+                              strongSelf.slide.slideNumber,
+                              strongSelf.fieldNumber];
                 file.descriptionProperty = @"Uploaded from CellScope";
                 file.mimeType = @"image/jpeg";
-                file.modifiedDate = [GTLDateTime dateTimeWithRFC3339String:self.slide.exam.dateModified];
+                file.modifiedDate = [GTLDateTime dateTimeWithRFC3339String:strongSelf.slide.exam.dateModified];
 
                 // Set parent folder if necessary
                 NSString *remoteDirIdentifier = [[NSUserDefaults standardUserDefaults] valueForKey:@"RemoteDirectoryIdentifier"];
@@ -95,7 +99,7 @@
                 NSData *data = UIImageJPEGRepresentation((UIImage *)image, 1.0);
 
                 NSString *message = [NSString stringWithFormat:@"Uploading local file from path %@ to Google Drive with title %@",
-                    self.path,
+                    strongSelf.path,
                     file.title
                 ];
                 [TBScopeData CSLog:message inCategory:@"SYNC"];
@@ -107,14 +111,15 @@
         }];
     }).then(^ PMKPromise* (GTLDriveFile *file) {
         if (!file) {
-            [TBScopeData CSLog:@"No file was returned from Google Drive" inCategory:@"SYNC"];
+            [TBScopeData CSLog:@"There was a problem uploading to Google Drive" inCategory:@"SYNC"];
             return [PMKPromise noopPromise];
         }
 
+        __strong typeof(weakSelf) strongSelf = weakSelf;
         return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
             if (file) {
                 [moc performBlock:^{
-                    self.googleDriveFileID = file.identifier;
+                    strongSelf.googleDriveFileID = file.identifier;
                     resolve(nil);
                 }];
             } else {
