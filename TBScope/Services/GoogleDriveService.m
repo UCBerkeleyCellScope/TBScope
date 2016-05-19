@@ -32,7 +32,7 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
                                                                                              clientID:kClientID
                                                                                          clientSecret:kClientSecret];
         self.driveService.shouldFetchNextPages = YES;
-        self.googleDriveTimeout = 15.0;
+        self.googleDriveTimeout = 60.0;
     }
     return self;
 }
@@ -159,8 +159,7 @@ static NSString *const kClientSecret = @"mbDjzu2hKDW23QpNJXe_0Ukd";
         query.setModifiedDate = YES;
 
         // Execute query
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        return [strongSelf executeQueryWithTimeout:query];
+        return [self executeQueryWithTimeout:query];
     });
 }
 

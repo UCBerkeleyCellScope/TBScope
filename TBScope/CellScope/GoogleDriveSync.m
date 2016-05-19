@@ -582,59 +582,85 @@ BOOL _hasAttemptedLogUpload;
 {
     NSManagedObjectContext *tmpMOC = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
     tmpMOC.parentContext = [[TBScopeData sharedData] managedObjectContext];
-    
-    NSPredicate* pred = [NSPredicate predicateWithFormat:@"(synced == NO)"];
-    __block NSArray* results;
-    [tmpMOC performBlockAndWait:^{
-        results = [CoreDataHelper searchObjectsForEntity:@"Logs"
-                                           withPredicate:pred
-                                              andSortKey:@"date"
-                                        andSortAscending:YES
-                                              andContext:tmpMOC];
-    }];
 
-    if (results.count <= 0) {
-        // Nothing to do
-        completionBlock(nil);
-        return;
-    }
+    [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+        [tmpMOC performBlock:^{
+            // Set up the query (with limit)
+            NSFetchRequest *request = [[NSFetchRequest alloc] init];
+            NSEntityDescription *entity = [NSEntityDescription entityForName:@"Logs"
+                                                      inManagedObjectContext:tmpMOC];
+            [request setEntity:entity];
+            request.resultType = NSManagedObjectResultType;
+            NSPredicate* pred = [NSPredicate predicateWithFormat:@"(synced == NO)"];
+            [request setPredicate:pred];
+            NSSortDescriptor *sortDescriptor = [[NSSortDescriptor alloc] initWithKey:@"date"
+                                                                           ascending:YES];
+            NSArray *sortDescriptors = [[NSArray alloc] initWithObjects:sortDescriptor, nil];
+            [request setSortDescriptors:sortDescriptors];
+            [request setFetchLimit:50000];
 
-    NSLog(@"UPLOADING LOG FILE");
+            // Execute the fetch request
+            NSError *error = nil;
+            NSArray *results = [tmpMOC executeFetchRequest:request
+                                                     error:&error];
 
-    // Build text file
-    __block NSMutableString* outString = [[NSMutableString alloc] init];
-    for (Logs* logEntry in results) {
-        [tmpMOC performBlockAndWait:^{
-            logEntry.synced = YES;
-            [outString appendFormat:@"%@\t%@\t%@\n", logEntry.date, logEntry.category, logEntry.entry];
+            // If the returned array was nil then there was an error
+            if (results == nil) {
+                NSLog(@"Couldn't fetch objects");
+                results = @[];
+            } else {
+                NSLog(@"Found %d log messages that have not yet been sync'd", (int)results.count);
+            }
+
+            resolve(results);
         }];
-    }
+    }].then(^(NSArray *results) {
+        return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+            if (results.count <= 0) {
+                resolve(nil);
+            }
 
-    // Create a google file object from this image
-    GTLDriveFile *file = [GTLDriveFile object];
-    file.title = [NSString stringWithFormat:@"%@ - %@.log",
-                  [[NSUserDefaults standardUserDefaults] stringForKey:@"CellScopeID"],
-                  [TBScopeData stringFromDate:[NSDate date]]];
-    file.descriptionProperty = @"Uploaded from CellScope";
-    file.mimeType = @"text/plain";
-    NSData *data = [outString dataUsingEncoding:NSUTF8StringEncoding];
+            // Build text file
+            [tmpMOC performBlock:^{
+                NSMutableString* outString = [[NSMutableString alloc] init];
+                for (Logs *logEntry in results) {
+                    logEntry.synced = YES;
+                    [outString appendFormat:@"%@\t%@\t%@\n", logEntry.date, logEntry.category, logEntry.entry];
+                }
+                resolve(outString);
+            }];
+        }];
+    }).then(^(NSString *logString) {
+        // Create a google file object from the log string
+        GTLDriveFile *file = [GTLDriveFile object];
+        file.title = [NSString stringWithFormat:@"%@ - %@.log",
+                      [[NSUserDefaults standardUserDefaults] stringForKey:@"CellScopeID"],
+                      [TBScopeData stringFromDate:[NSDate date]]];
+        file.descriptionProperty = @"Uploaded from CellScope";
+        file.mimeType = @"text/plain";
+        NSData *data = [logString dataUsingEncoding:NSUTF8StringEncoding];
 
-    // Upload the file
-    GoogleDriveService *service = [[GoogleDriveService alloc] init];
-    [service uploadFile:file withData:data]
-        .then(^(GTLDriveFile *insertedFile) {
-            [tmpMOC performBlockAndWait:^{
+        // Upload the file
+        GoogleDriveService *service = [[GoogleDriveService alloc] init];
+        return [service uploadFile:file withData:data];
+    }).then(^(GTLDriveFile *insertedFile) {
+        return [PMKPromise promiseWithResolver:^(PMKResolver resolve) {
+            [tmpMOC performBlock:^{
                 // Save
                 NSError *tmpMOCSaveError;
                 if (![tmpMOC save:&tmpMOCSaveError]) {
                     NSLog(@"Error saving temporary managed object context");
                 }
                 [[TBScopeData sharedData] saveCoreData];
+                resolve(nil);
             }];
-            completionBlock(nil);
-        }).catch(^(NSError *error) {
-            completionBlock(error);
-        });
+        }];
+    }).then(^{
+        completionBlock(nil);
+        return [PMKPromise promiseWithValue:nil];
+    }).catch(^(NSError *error) {
+        completionBlock(error);
+    });
 }
 
 - (BOOL)uploadIsEnabled
