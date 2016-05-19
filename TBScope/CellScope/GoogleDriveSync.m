@@ -146,7 +146,7 @@ BOOL _hasAttemptedLogUpload;
             [TBScopeData CSLog:@"Fetching new images from core data." inCategory:@"SYNC"];
 
             // Find all slides, with the most recent first
-            pred = [NSPredicate predicateWithFormat:@"(googleDriveFileID = nil)"];
+            pred = [NSPredicate predicateWithFormat:@"(googleDriveFileID = nil) && (path != nil)"];
             results = [CoreDataHelper searchObjectsForEntity:@"Images"
                                                withPredicate:pred
                                                   andSortKey:@"slide.dateScanned"
