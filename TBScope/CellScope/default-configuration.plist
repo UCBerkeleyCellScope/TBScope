@@ -28,6 +28,10 @@
 	<real>13000</real>
 	<key>FocusBroadSweepStepSize</key>
 	<integer>500</integer>
+	<key>FocusFineSweepRange</key>
+	<real>4000</real>
+	<key>FocusFineSweepStepSize</key>
+	<integer>100</integer>
 	<key>DeadBatteryVoltage</key>
 	<real>7</real>
 	<key>MaxBatteryVoltage</key>

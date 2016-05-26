@@ -97,17 +97,20 @@
 
     self.stageSettlingTime.text = [[NSString alloc] initWithFormat:@"%2.3f",[prefs floatForKey:@"StageSettlingTime"]];
     self.focusSettlingTime.text = [[NSString alloc] initWithFormat:@"%2.3f",[prefs floatForKey:@"FocusSettlingTime"]];
-    self.stageStepDuration.text = [[NSString alloc] initWithFormat:@"%ld",[prefs integerForKey:@"StageStepInterval"]];
-    self.focusStepDuration.text = [[NSString alloc] initWithFormat:@"%ld",[prefs integerForKey:@"FocusStepInterval"]];
-    
+    self.stageStepDuration.text = [[NSString alloc] initWithFormat:@"%ld", (long)[prefs integerForKey:@"StageStepInterval"]];
+    self.focusStepDuration.text = [[NSString alloc] initWithFormat:@"%ld",(long)[prefs integerForKey:@"FocusStepInterval"]];
+
+    self.broadFocusStepSize.text = [[NSString alloc] initWithFormat:@"%ld",(long)[prefs integerForKey:@"FocusBroadSweepStepSize"]];
+    self.broadFocusRange.text    = [[NSString alloc] initWithFormat:@"%ld",(long)[prefs integerForKey:@"FocusBroadSweepRange"]];
+    self.fineFocusStepSize.text  = [[NSString alloc] initWithFormat:@"%ld",(long)[prefs integerForKey:@"FocusFineSweepStepSize"]];
+    self.fineFocusRange.text     = [[NSString alloc] initWithFormat:@"%ld",(long)[prefs integerForKey:@"FocusFineSweepRange"]];
+
     self.backlash.text = [[NSString alloc] initWithFormat:@"%ld",[prefs integerForKey:@"StageBacklashSteps"]];
     self.emptyFieldThreshold.text = [[NSString alloc] initWithFormat:@"%2.3f",[prefs floatForKey:@"EmptyContentThreshold"]];
     self.boundaryFieldThreshold.text = [[NSString alloc] initWithFormat:@"%2.3f",[prefs floatForKey:@"BoundaryScoreThreshold"]];
     self.uploadSwitch.on = [prefs boolForKey:@"UploadEnabled"];
     self.downloadSwitch.on = [prefs boolForKey:@"DownloadEnabled"];
     self.debuggingSwitch.on = [prefs boolForKey:@"DebugMode"];
-    
-    
 }
 
 - (void)saveValuesToPreferences
@@ -169,6 +172,11 @@
     [prefs setInteger:self.stageStepDuration.text.integerValue forKey:@"StageStepInterval"];
     [prefs setFloat:self.focusSettlingTime.text.floatValue forKey:@"FocusSettlingTime"];
     [prefs setFloat:self.stageSettlingTime.text.floatValue forKey:@"StageSettlingTime"];
+
+    [prefs setInteger:self.broadFocusStepSize.text.integerValue forKey:@"FocusBroadSweepStepSize"];
+    [prefs setInteger:self.broadFocusRange.text.integerValue forKey:@"FocusBroadSweepRange"];
+    [prefs setInteger:self.fineFocusStepSize.text.integerValue forKey:@"FocusFineSweepStepSize"];
+    [prefs setInteger:self.fineFocusRange.text.integerValue forKey:@"FocusFineSweepRange"];
     
     [prefs setInteger:self.backlash.text.integerValue forKey:@"StageBacklashSteps"];
     [prefs setFloat:self.emptyFieldThreshold.text.floatValue forKey:@"EmptyContentThreshold"];
@@ -176,8 +184,7 @@
     [prefs setBool:self.uploadSwitch.on forKey:@"UploadEnabled"];
     [prefs setBool:self.downloadSwitch.on forKey:@"DownloadEnabled"];
     [prefs setBool:self.debuggingSwitch.on forKey:@"DebugMode"];
-    
-        
+
     if ([alertString isEqualToString:@""])
         [prefs synchronize];
     

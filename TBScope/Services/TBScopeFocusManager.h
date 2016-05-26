@@ -30,6 +30,8 @@ typedef NS_ENUM(int, TBScopeFocusManagerResult)
 -(int)zPositionBroadSweepStepsPerSlice;
 -(int)zPositionBroadSweepMin;
 -(int)zPositionBroadSweepMax;
+-(int)zPositionFineSweepStepsPerSlice;
+-(int)zPositionFineSweepRangeInSteps;
 -(float)currentImageQualityMetric;
 -(void)pauseForSettling;  // NOTE: only public so we can mock it out in tests
 @property (nonatomic) int lastGoodPosition;

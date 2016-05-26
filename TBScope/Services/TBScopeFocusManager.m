@@ -65,7 +65,12 @@
 
 - (int)zPositionFineSweepStepsPerSlice
 {
-    return 100;
+    return (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"FocusFineSweepStepSize"];
+}
+
+- (int)zPositionFineSweepRangeInSteps
+{
+    return (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"FocusFineSweepRange"];
 }
 
 - (float)currentImageQualityMetric
@@ -130,9 +135,12 @@
 {
     [TBScopeData CSLog:@"Starting coarse sweep" inCategory:@"CAPTURE"];
 
-    return [self _sweepFrom:[self zPositionBroadSweepMin]
-                         to:[self zPositionBroadSweepMax]
-             inIncrementsOf:[self zPositionBroadSweepStepsPerSlice]
+    int minPosition   = [self zPositionBroadSweepMin];
+    int maxPosition   = [self zPositionBroadSweepMax];
+    int stepIncrement = [self zPositionBroadSweepStepsPerSlice];
+    return [self _sweepFrom:minPosition
+                         to:maxPosition
+             inIncrementsOf:stepIncrement
          withStdevThreshold:FOCUS_SUCCESS_STDDEV_MULTIPLIER];
 }
 
@@ -141,8 +149,8 @@
     [TBScopeData CSLog:@"Starting fine sweep" inCategory:@"CAPTURE"];
 
     int currentPosition = [[TBScopeHardware sharedHardware] zPosition];
-    int minPosition = currentPosition - 2000;
-    int maxPosition = currentPosition + 500;
+    int minPosition = currentPosition - [self zPositionFineSweepRangeInSteps] / 2.0;
+    int maxPosition = currentPosition + [self zPositionFineSweepRangeInSteps] / 2.0;
     int stepIncrement = [self zPositionFineSweepStepsPerSlice];
     return [self _sweepFrom:minPosition
                          to:maxPosition
@@ -156,6 +164,11 @@
                      withStdevThreshold:(double)stdevThreshold
 {
     NSLog(@"Sweeping from %d to %d in increments of %d", minPosition, maxPosition, stepIncrement);
+
+    // Don't infinite loop if the step size is zero
+    if (stepIncrement < 1) {
+        return TBScopeFocusManagerResultFailure;
+    }
 
     // Start at minPosition
     [[TBScopeHardware sharedHardware] moveToX:-1

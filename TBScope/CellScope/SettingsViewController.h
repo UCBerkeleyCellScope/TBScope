@@ -65,7 +65,10 @@
 @property (weak, nonatomic) IBOutlet UITextField *stageSettlingTime;
 @property (weak, nonatomic) IBOutlet UITextField *focusStepDuration;
 @property (weak, nonatomic) IBOutlet UITextField *stageStepDuration;
-
+@property (weak, nonatomic) IBOutlet UITextField *broadFocusStepSize;
+@property (weak, nonatomic) IBOutlet UITextField *broadFocusRange;
+@property (weak, nonatomic) IBOutlet UITextField *fineFocusStepSize;
+@property (weak, nonatomic) IBOutlet UITextField *fineFocusRange;
 
 - (IBAction)didPressResetSettings;
 

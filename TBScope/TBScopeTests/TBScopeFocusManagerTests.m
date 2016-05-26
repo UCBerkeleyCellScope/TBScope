@@ -180,11 +180,21 @@
     Method originalMethod3 = class_getInstanceMethod([TBScopeFocusManager class], @selector(zPositionBroadSweepMax));
     Method swizzledMethod3 = class_getInstanceMethod([self class], @selector(_zPositionBroadSweepMax));
     method_exchangeImplementations(originalMethod3, swizzledMethod3);
+
+    Method originalMethod4 = class_getInstanceMethod([TBScopeFocusManager class], @selector(zPositionFineSweepStepsPerSlice));
+    Method swizzledMethod4 = class_getInstanceMethod([self class], @selector(_zPositionFineSweepStepsPerSlice));
+    method_exchangeImplementations(originalMethod4, swizzledMethod4);
+
+    Method originalMethod5 = class_getInstanceMethod([TBScopeFocusManager class], @selector(zPositionFineSweepRangeInSteps));
+    Method swizzledMethod5 = class_getInstanceMethod([self class], @selector(_zPositionFineSweepRangeInSteps));
+    method_exchangeImplementations(originalMethod5, swizzledMethod5);
 }
 
 - (int)_zPositionBroadSweepStepsPerSlice { return 500; }
 - (int)_zPositionBroadSweepMin { return 0; }
 - (int)_zPositionBroadSweepMax { return 10000; }
+- (int)_zPositionFineSweepStepsPerSlice { return 20; }
+- (int)_zPositionFineSweepRangeInSteps { return 400; }
 
 // Stub out [focusManager currentImageQualityMetric] to be a linear curve
 // peaking at 8000 (for coarse focus testing).
