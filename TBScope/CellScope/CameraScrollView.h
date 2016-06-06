@@ -16,6 +16,8 @@
 @interface CameraScrollView : UIScrollView <UIScrollViewDelegate>
 @property (strong,nonatomic) UIView* previewLayerView;
 @property (strong,nonatomic) UILabel* imageQualityLabel;
+@property (strong,nonatomic) UIButton* testDriftButton;
+@property (strong,nonatomic) UIButton* testBacklashButton;
 @property (nonatomic) float imageRotation;
 @property (nonatomic) double currentFocusMetric;
 
@@ -23,4 +25,6 @@
 - (void) takeDownCamera;
 - (void) zoomExtents;
 - (void) grabImage;
+- (IBAction) testDrift:(id)sender;
+- (IBAction) testBacklash:(id)sender;
 @end
